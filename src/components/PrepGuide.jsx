@@ -13,7 +13,7 @@ export default function PrepGuide() {
 
       const results = await Promise.all(
         plannedRecipes.map(async r => {
-          const ings = await getIngredients(r.id)
+          const ings = await getIngredients(r.Ingredients || [])
           return { recipe: r, ingredients: ings }
         })
       )

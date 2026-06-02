@@ -56,15 +56,16 @@ export async function createRecipe(data) {
 
 // ── Ingredients ───────────────────────────────────────────────────────────────
 
-export async function getIngredients(recipeId) {
-  return all('Ingredients', {
-    filterByFormula: `{Recipe} = "${recipeId}"`,
-  })
+// ingredientIds comes from the recipe's linked `Ingredients` field
+export async function getIngredients(ingredientIds) {
+  if (!ingredientIds || !ingredientIds.length) return []
+  const formula = `OR(${ingredientIds.map(id => `RECORD_ID()="${id}"`).join(',')})`
+  return all('Ingredients', { filterByFormula: formula })
 }
 
-export async function getIngredientsByRecipes(recipeIds) {
-  if (!recipeIds.length) return []
-  const formula = `OR(${recipeIds.map(id => `FIND("${id}", ARRAYJOIN({Recipe}))`).join(',')})`
+export async function getIngredientsByRecipes(ingredientIds) {
+  if (!ingredientIds || !ingredientIds.length) return []
+  const formula = `OR(${ingredientIds.map(id => `RECORD_ID()="${id}"`).join(',')})`
   return all('Ingredients', { filterByFormula: formula })
 }
 
@@ -91,7 +92,7 @@ function getWeekStart() {
 export async function getThisWeeksPlan() {
   const weekStart = getWeekStart()
   const records = await all('Weekly Plan', {
-    filterByFormula: `{Week Start Date} = "${weekStart}"`,
+    filterByFormula: `IS_SAME({Week Start Date}, "${weekStart}", "day")`,
   })
   return records
 }
@@ -116,14 +117,14 @@ export async function saveWeeklyPlan(recipeIds) {
 
 export async function getRatings(recipeId) {
   return all('Ratings', {
-    filterByFormula: `{Recipe} = "${recipeId}"`,
+    filterByFormula: `FIND("${recipeId}", ARRAYJOIN({Recipe}))`,
   })
 }
 
 export async function saveRating(data) {
   // Check for existing rating by this user for this recipe
   const existing = await all('Ratings', {
-    filterByFormula: `AND({Recipe} = "${data.recipeId}", {User} = "${data.userId}")`,
+    filterByFormula: `AND(FIND("${data.recipeId}", ARRAYJOIN({Recipe})), FIND("${data.userId}", ARRAYJOIN({User})))`,
   })
 
   if (existing.length) {

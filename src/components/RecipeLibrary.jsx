@@ -166,12 +166,14 @@ function RecipeDetail({ user }) {
 
   useEffect(() => {
     async function load() {
-      const [recipes, ings, rats] = await Promise.all([
-        getRecipes(),
-        getIngredients(id),
+      const recipes = await getRecipes()
+      const recipe = recipes.find(r => r.id === id)
+      const ingredientIds = recipe?.Ingredients || []
+      const [ings, rats] = await Promise.all([
+        getIngredients(ingredientIds),
         getRatings(id),
       ])
-      setRecipe(recipes.find(r => r.id === id))
+      setRecipe(recipe)
       setIngredients(ings)
       setRatings(rats)
       setLoading(false)

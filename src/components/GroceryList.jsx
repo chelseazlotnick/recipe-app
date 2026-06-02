@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getThisWeeksPlan, getIngredientsByRecipes } from '../lib/airtable.js'
+import { getThisWeeksPlan, getRecipes, getIngredientsByRecipes } from '../lib/airtable.js'
 
 export default function GroceryList() {
   const [grouped, setGrouped] = useState({})
@@ -8,9 +8,11 @@ export default function GroceryList() {
 
   useEffect(() => {
     async function load() {
-      const plan = await getThisWeeksPlan()
-      const recipeIds = plan.flatMap(p => (Array.isArray(p.Recipes) ? p.Recipes : []))
-      const ingredients = await getIngredientsByRecipes(recipeIds)
+      const [plan, allRecipes] = await Promise.all([getThisWeeksPlan(), getRecipes()])
+      const plannedRecipeIds = plan.flatMap(p => (Array.isArray(p.Recipes) ? p.Recipes : []))
+      const plannedRecipes = allRecipes.filter(r => plannedRecipeIds.includes(r.id))
+      const ingredientIds = plannedRecipes.flatMap(r => r.Ingredients || [])
+      const ingredients = await getIngredientsByRecipes(ingredientIds)
 
       const groups = {}
       for (const ing of ingredients) {
